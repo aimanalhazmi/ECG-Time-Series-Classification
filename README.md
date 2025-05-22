@@ -29,7 +29,7 @@ The final deliverables include a report, runnable code for all tasks, and three 
    ```bash
    cd amls-ecg-time-series-classification
    ```
-2. Create and Activate a Virtual Environment
+2. **Create and Activate a Virtual Environment**
 
 - **make or make install:**  Create .venv and install Python dependencies
 
