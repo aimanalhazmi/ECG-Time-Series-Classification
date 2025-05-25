@@ -4,10 +4,12 @@ import torch.optim as optim
 from torch.utils.data import Dataset, DataLoader
 from torch.nn.utils.rnn import pad_sequence, pack_padded_sequence
 import numpy as np
+from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay
+import matplotlib.pyplot as plt
 
 import config
 from model import ECGClassifier
-
+from metrics import plot_acc, plot_loss
 
 class DummyECGDataset(Dataset):
     def __init__(self, num_samples, min_len, max_len, num_classes):
@@ -46,6 +48,11 @@ def train_model(model, train_loader, val_loader, criterion, optimizer, num_epoch
     print(f"Training on {device}")
     model.to(device)
 
+    train_acc_list = []
+    val_acc_list = []
+    train_loss_list = []
+    val_loss_list = []
+
     for epoch in range(num_epochs):
         model.train()
         running_loss = 0.0
@@ -65,6 +72,8 @@ def train_model(model, train_loader, val_loader, criterion, optimizer, num_epoch
 
         epoch_loss = running_loss / len(train_loader)
         epoch_acc_train = 100 * correct_train / total_train
+        train_loss_list.append(epoch_loss)
+        train_acc_list.append(epoch_acc_train)
         print(f"Epoch [{epoch + 1}/{num_epochs}], Loss: {epoch_loss:.4f}, Train Acc: {epoch_acc_train:.2f}%")
 
         model.eval()
@@ -83,10 +92,33 @@ def train_model(model, train_loader, val_loader, criterion, optimizer, num_epoch
 
         epoch_acc_val = 100 * correct_val / total_val
         avg_val_loss = val_loss / len(val_loader)
+        val_loss_list.append(avg_val_loss)
+        val_acc_list.append(epoch_acc_val)
         print(f"Validation Loss: {avg_val_loss:.4f}, Validation Acc: {epoch_acc_val:.2f}%")
 
     print("Finished Training")
+    return train_acc_list, val_acc_list, train_loss_list, val_loss_list
 
+def plot_confusion_matrix(model, dataloader, device, class_names=None):
+    model.eval()
+    all_preds = []
+    all_labels = []
+
+    with torch.no_grad():
+        for packed_inputs, lengths, labels in dataloader:
+            labels = labels.to(device)
+            outputs = model(packed_inputs.to(device), lengths.to(device))
+            _, predicted = torch.max(outputs.data, 1)
+            all_preds.extend(predicted.cpu().numpy())
+            all_labels.extend(labels.cpu().numpy())
+
+    cm = confusion_matrix(all_labels, all_preds)
+    disp = ConfusionMatrixDisplay(confusion_matrix=cm, display_labels=class_names)
+    disp.plot(cmap="Blues")
+    plt.title("Validation Confusion Matrix")
+    plt.tight_layout()
+    plt.savefig("results/confusion_matrix.png")
+    plt.show()
 
 if __name__ == "__main__":
     cfg = config
@@ -99,6 +131,12 @@ if __name__ == "__main__":
     criterion = nn.CrossEntropyLoss()
     optimizer = optim.Adam(model.parameters(), lr=cfg.LEARNING_RATE)
 
-    train_model(model, train_loader, val_loader, criterion, optimizer, cfg.NUM_EPOCHS, cfg.DEVICE)
+    train_acc_list, val_acc_list, train_loss_list, val_loss_list = train_model(model, train_loader, val_loader, criterion, optimizer, cfg.NUM_EPOCHS, cfg.DEVICE)
     # torch.save(model.state_dict(), "ecg_classifier_model.pth")
     # print("Model saved to ecg_classifier_model.pth")
+
+    # Matrics
+    plot_acc(train_acc_list, val_acc_list)
+    plot_loss(train_loss_list, val_loss_list)
+    class_names = ["Normal", "AF", "Other", "Noisy"]
+    plot_confusion_matrix(model, val_loader, cfg.DEVICE, class_names)
