@@ -1,0 +1,5 @@
+pip~=23.2.1
+wheel~=0.41.2
+filelock~=3.18.0
+torch~=2.7.0
+numpy~=2.2.6
