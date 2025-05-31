@@ -2,3 +2,5 @@
 .AppleDouble
 .LSOverride
 .idea
+.ipynb_checkpoints
+__pycache__/
