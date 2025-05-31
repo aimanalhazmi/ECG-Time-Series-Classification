@@ -10,28 +10,7 @@ import matplotlib.pyplot as plt
 import config
 from model import ECGClassifier
 from metrics import plot_acc, plot_loss
-
-class DummyECGDataset(Dataset):
-    def __init__(self, num_samples, min_len, max_len, num_classes):
-        self.num_samples = num_samples
-        self.min_len = min_len
-        self.max_len = max_len
-        self.num_classes = num_classes
-        self.data = []
-        self.labels = []
-        self.lengths = []
-        for _ in range(num_samples):
-            seq_len = np.random.randint(min_len, max_len + 1)
-            ecg_signal = torch.randn(seq_len)
-            self.data.append(ecg_signal)
-            self.labels.append(torch.randint(0, num_classes, (1,)).item())
-            self.lengths.append(seq_len)
-
-    def __len__(self):
-        return self.num_samples
-
-    def __getitem__(self, idx):
-        return self.data[idx], self.lengths[idx], self.labels[idx]
+from data import load_data
 
 
 def collate_fn(batch):
@@ -122,8 +101,8 @@ def plot_confusion_matrix(model, dataloader, device, class_names=None):
 
 if __name__ == "__main__":
     cfg = config
-    train_dataset = DummyECGDataset(cfg.NUM_TRAIN_SAMPLES, cfg.MIN_SEQ_LEN, cfg.MAX_SEQ_LEN, cfg.NUM_CLASSES)
-    val_dataset = DummyECGDataset(cfg.NUM_VAL_SAMPLES, cfg.MIN_SEQ_LEN, cfg.MAX_SEQ_LEN, cfg.NUM_CLASSES)
+    train_dataset, val_dataset = load_data(data_dir="data", test_size=0.2, random_state=42)
+
     train_loader = DataLoader(train_dataset, batch_size=cfg.BATCH_SIZE, shuffle=True, collate_fn=collate_fn)
     val_loader = DataLoader(val_dataset, batch_size=cfg.BATCH_SIZE, shuffle=False, collate_fn=collate_fn)
 
@@ -135,7 +114,7 @@ if __name__ == "__main__":
     # torch.save(model.state_dict(), "ecg_classifier_model.pth")
     # print("Model saved to ecg_classifier_model.pth")
 
-    # Matrics
+    # Metrics
     plot_acc(train_acc_list, val_acc_list)
     plot_loss(train_loss_list, val_loss_list)
     class_names = ["Normal", "AF", "Other", "Noisy"]
