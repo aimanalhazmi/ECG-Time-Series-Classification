@@ -101,7 +101,7 @@ def plot_confusion_matrix(model, dataloader, device, class_names=None):
 
 if __name__ == "__main__":
     cfg = config
-    train_dataset, val_dataset = load_data(data_dir="data", test_size=0.2, random_state=42)
+    train_dataset, val_dataset = load_data(test_size=0.2, random_state=42)
 
     train_loader = DataLoader(train_dataset, batch_size=cfg.BATCH_SIZE, shuffle=True, collate_fn=collate_fn)
     val_loader = DataLoader(val_dataset, batch_size=cfg.BATCH_SIZE, shuffle=False, collate_fn=collate_fn)
