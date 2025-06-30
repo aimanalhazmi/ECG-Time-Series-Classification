@@ -5,3 +5,5 @@
 .ipynb_checkpoints
 __pycache__/
 .venv
+data
+Task(1.1)/data
