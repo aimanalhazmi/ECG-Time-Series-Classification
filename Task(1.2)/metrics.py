@@ -9,6 +9,7 @@ from sklearn.metrics import (
 
 
 def plot_evaluation_metric(train_metric, val_metric, metric="Accuracy"):
+    plt.figure(figsize=(10, 5))
     epochs = list(range(1, len(train_metric) + 1))
     plt.plot(epochs, train_metric, label="Train", marker="o")
     plt.plot(epochs, val_metric, label="Validation", marker="s")
@@ -25,9 +26,10 @@ def plot_evaluation_metric(train_metric, val_metric, metric="Accuracy"):
 
 
 def plot_loss(train_loss, val_loss):
+    plt.figure(figsize=(10, 5))
     epochs = list(range(1, len(train_loss) + 1))
-    plt.plot(epochs, train_loss, label="Train", marker="o")
-    plt.plot(epochs, val_loss, label="Validation", marker="s")
+    plt.plot(epochs, train_loss, label="Train")
+    plt.plot(epochs, val_loss, label="Validation")
     plt.title("Loss over Epochs")
     plt.xlabel("Epoch")
     plt.ylabel("Loss")
@@ -56,6 +58,7 @@ def plot_classification_report(y_true, y_pred, target_names):
         y_true, y_pred, target_names=target_names, output_dict=True, zero_division=0
     )
     rows = []
+    supports = []
     row_labels = []
 
     for label in target_names:
@@ -67,6 +70,7 @@ def plot_classification_report(y_true, y_pred, target_names):
                 report[label]["f1-score"],
             ]
         )
+        supports.append(report[label]["support"])
     rows.append(
         [
             report["macro avg"]["precision"],
@@ -74,6 +78,8 @@ def plot_classification_report(y_true, y_pred, target_names):
             report["macro avg"]["f1-score"],
         ]
     )
+    supports.append(report["macro avg"]["support"])
+
     rows.append(
         [
             report["weighted avg"]["precision"],
@@ -81,20 +87,31 @@ def plot_classification_report(y_true, y_pred, target_names):
             report["weighted avg"]["f1-score"],
         ]
     )
+    supports.append(report["weighted avg"]["support"])
 
     report_array = np.array(rows)
     row_labels += ["Macro Avg", "Weighted Avg"]
-    plt.figure(figsize=(8, 4))
+
+    report_array = np.hstack([report_array, np.array(supports).reshape(-1, 1)])
+
+    plt.figure(figsize=(9, 4))
     sns.heatmap(
         report_array,
         annot=True,
         cmap="YlGnBu",
         fmt=".2f",
-        xticklabels=["Precision", "Recall", "F1-score"],
+        xticklabels=["Precision", "Recall", "F1-score", "Support"],
         yticklabels=row_labels,
     )
     plt.title("Classification Report")
     plt.tight_layout()
     plt.savefig("results/classification_report.png")
-    # plt.show()
     plt.close()
+
+    # Save text version
+    with open("results/classification_report.txt", "w") as f:
+        f.write(
+            classification_report(
+                y_true, y_pred, target_names=target_names, zero_division=0
+            )
+        )

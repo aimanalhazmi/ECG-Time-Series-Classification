@@ -131,7 +131,7 @@ def train_evaluate(
         if val_loss < best_val_loss:
             best_val_loss = val_loss
             best_model = copy.deepcopy(model.state_dict())
-            # torch.save(best_model, "best_model.pt")
+            torch.save(best_model, "best_model.pt")
             print("Saving new best model..")
         print(f"{'-'*25} End of Epoch {epoch+1} {'-'*25}")
 
@@ -144,6 +144,7 @@ def train_evaluate(
 
 
 def evaluate_best_model(model, dataloader, device, target_names=None):
+    model.to(device)
     model.eval()
     y_pred = []
     y_true = []
