@@ -1,13 +1,22 @@
 import torch
 
+if torch.backends.mps.is_available():
+    DEVICE = "mps"
+elif torch.cuda.is_available():
+    DEVICE = "cuda"
+else:
+    DEVICE = "cpu"
+
+TEST_SIZE = 0.2
+RANDOM_SEED = 42
 NUM_CLASSES = 4
 MAX_SEQ_LEN = 3000
 MIN_SEQ_LEN = 500
 
 LEARNING_RATE = 1e-3
 BATCH_SIZE = 16
-NUM_EPOCHS = 5
-DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
+NUM_EPOCHS = 20
+NUM_WORKERS = 4
 
 N_FFT = 256
 HOP_LENGTH = N_FFT // 4
