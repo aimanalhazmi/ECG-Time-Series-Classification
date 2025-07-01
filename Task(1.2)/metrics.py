@@ -8,7 +8,9 @@ from sklearn.metrics import (
 )
 
 
-def plot_evaluation_metric(train_metric, val_metric, metric="Accuracy"):
+def plot_evaluation_metric(
+    train_metric, val_metric, metric="Accuracy", save=True, save_to=""
+):
     plt.figure(figsize=(10, 5))
     epochs = list(range(1, len(train_metric) + 1))
     plt.plot(epochs, train_metric, label="Train", marker="o")
@@ -20,12 +22,14 @@ def plot_evaluation_metric(train_metric, val_metric, metric="Accuracy"):
     plt.legend()
     plt.grid(True)
     plt.tight_layout()
-    plt.savefig(f"results/{metric}.png")
-    # plt.show()
+    if save:
+        plt.savefig(f"{save_to}/{metric}.png")
+    else:
+        plt.show()
     plt.close()
 
 
-def plot_loss(train_loss, val_loss):
+def plot_loss(train_loss, val_loss, save=True, save_to=""):
     plt.figure(figsize=(10, 5))
     epochs = list(range(1, len(train_loss) + 1))
     plt.plot(epochs, train_loss, label="Train")
@@ -37,23 +41,27 @@ def plot_loss(train_loss, val_loss):
     plt.legend()
     plt.grid(True)
     plt.tight_layout()
-    plt.savefig("results/loss.png")
-    # plt.show()
+    if save:
+        plt.savefig(f"{save_to}/loss.png")
+    else:
+        plt.show()
     plt.close()
 
 
-def plot_confusion_matrix(y_true, y_pred, target_names):
+def plot_confusion_matrix(y_true, y_pred, target_names, save=True, save_to=""):
     cm = confusion_matrix(y_true, y_pred)
     disp = ConfusionMatrixDisplay(confusion_matrix=cm, display_labels=target_names)
     disp.plot(cmap="Blues")
     plt.title("Confusion Matrix")
     plt.tight_layout()
-    plt.savefig("results/confusion_matrix.png")
-    # plt.show()
+    if save:
+        plt.savefig(f"{save_to}/confusion_matrix.png")
+    else:
+        plt.show()
     plt.close()
 
 
-def plot_classification_report(y_true, y_pred, target_names):
+def plot_classification_report(y_true, y_pred, target_names, save=True, save_to=""):
     report = classification_report(
         y_true, y_pred, target_names=target_names, output_dict=True, zero_division=0
     )
@@ -105,11 +113,14 @@ def plot_classification_report(y_true, y_pred, target_names):
     )
     plt.title("Classification Report")
     plt.tight_layout()
-    plt.savefig("results/classification_report.png")
+    if save:
+        plt.savefig(f"{save_to}/classification_report.png")
+    else:
+        plt.show()
     plt.close()
 
     # Save text version
-    with open("results/classification_report.txt", "w") as f:
+    with open(f"{save_to}/classification_report.txt", "w") as f:
         f.write(
             classification_report(
                 y_true, y_pred, target_names=target_names, zero_division=0

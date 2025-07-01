@@ -1,3 +1,5 @@
+import os
+
 import torch
 
 if torch.backends.mps.is_available():
@@ -7,6 +9,22 @@ elif torch.cuda.is_available():
 else:
     DEVICE = "cpu"
 
+# DATA
+DATA_DIR = "../data"
+X_TRAIN = os.path.join(DATA_DIR, "X_train.zip")
+Y_TRAIN = os.path.join(DATA_DIR, "y_train.csv")
+X_TEST = os.path.join(DATA_DIR, "X_test.zip")
+TARGET_NAMES = ["Normal", "AF", "Other", "Noisy"]
+
+# OUTPUTS DIR
+OUTPUTS = "outputs/"
+SAVE = True
+
+# PREDICTIONS ON TEST DATASET
+BEST_MODEL_PATH = "outputs/train_results_1/best_model.pt"
+PREDICTION_BASE_FILE = "base.csv"
+
+# Training Parameters
 TEST_SIZE = 0.2
 RANDOM_SEED = 42
 NUM_CLASSES = 4

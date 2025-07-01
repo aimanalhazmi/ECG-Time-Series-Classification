@@ -1,10 +1,7 @@
 import copy
-
-import torch
 import torch.nn as nn
 import torch.optim as optim
 from torch.utils.data import DataLoader
-from torch.nn.utils.rnn import pad_sequence, pack_padded_sequence, pad_packed_sequence
 import numpy as np
 from sklearn.utils.class_weight import compute_class_weight
 from sklearn.model_selection import train_test_split
@@ -19,20 +16,11 @@ from metrics import (
     plot_confusion_matrix,
     plot_classification_report,
 )
-from data import load_data, ECGDataset
+from data_loader import load, ECGDataset
+from utils import *
 from tqdm import tqdm
 from time import time
-
-
-def collate_fn(batch):
-    data = [item[0] for item in batch]
-    lengths = torch.tensor([item[1] for item in batch], dtype=torch.long)
-    labels = torch.tensor([item[2] for item in batch], dtype=torch.long)
-    padded_data = pad_sequence(data, batch_first=True, padding_value=0.0)
-    packed_data = pack_padded_sequence(
-        padded_data, lengths, batch_first=True, enforce_sorted=False
-    )
-    return packed_data, lengths, labels
+import sys
 
 
 def train(model, train_loader, criterion, optimizer, device):
@@ -93,8 +81,10 @@ def evaluate(model, val_loader, criterion, device):
 
 
 def train_evaluate(
-    model, train_loader, val_loader, criterion, optimizer, num_epochs, device
+    model, train_loader, val_loader, criterion, optimizer, cfg, save_model_to
 ):
+    num_epochs = cfg.NUM_EPOCHS
+    device = cfg.DEVICE
     print(f"Training will run on: {device}")
     model.to(device)
 
@@ -131,7 +121,7 @@ def train_evaluate(
         if val_loss < best_val_loss:
             best_val_loss = val_loss
             best_model = copy.deepcopy(model.state_dict())
-            torch.save(best_model, "best_model.pt")
+            torch.save(best_model, os.path.join(save_model_to, "best_model.pt"))
             print("Saving new best model..")
         print(f"{'-'*25} End of Epoch {epoch+1} {'-'*25}")
 
@@ -143,22 +133,34 @@ def train_evaluate(
     return best_model, train_metrics
 
 
-def evaluate_best_model(model, dataloader, device, target_names=None):
-    model.to(device)
+def evaluate_best_model(model, dataloader, cfg):
+    model.to(cfg.DEVICE)
     model.eval()
     y_pred = []
     y_true = []
 
     with torch.no_grad():
         for packed_inputs, lengths, labels in dataloader:
-            labels = labels.to(device)
-            outputs = model(packed_inputs.to(device), lengths.to(device))
+            labels = labels.to(cfg.DEVICE)
+            outputs = model(packed_inputs.to(cfg.DEVICE), lengths.to(cfg.DEVICE))
             _, predicted = torch.max(outputs.data, 1)
             y_pred.extend(predicted.cpu().numpy())
             y_true.extend(labels.cpu().numpy())
 
-    plot_confusion_matrix(y_true=y_true, y_pred=y_pred, target_names=target_names)
-    plot_classification_report(y_true=y_true, y_pred=y_pred, target_names=target_names)
+    plot_confusion_matrix(
+        y_true=y_true,
+        y_pred=y_pred,
+        target_names=cfg.TARGET_NAMES,
+        save=cfg.SAVE,
+        save_to=save_to,
+    )
+    plot_classification_report(
+        y_true=y_true,
+        y_pred=y_pred,
+        target_names=cfg.TARGET_NAMES,
+        save=cfg.SAVE,
+        save_to=save_to,
+    )
     f1 = f1_score(y_true=y_true, y_pred=y_pred, average="weighted")
     print(f"Evaluation of best saved model completed — F1-Score: {f1 * 100:.2f}")
 
@@ -177,9 +179,12 @@ def plot_samples(train_loader, target_names):
 
 if __name__ == "__main__":
     cfg = config
-    ecg_signals, labels = load_data()
+    # Define and create output directory
+    save_to = create_dir(cfg.OUTPUTS, "train_results")
 
-    print("Splitting ECG signals into training and test sets.")
+    ecg_signals, labels = load(cfg, train_data=True)
+
+    print("Splitting Train ECG signals into training and validation sets.")
     X_train, X_val, y_train, y_val = train_test_split(
         ecg_signals,
         labels,
@@ -213,7 +218,6 @@ if __name__ == "__main__":
         num_workers=cfg.NUM_WORKERS,
     )
 
-    target_names = ["Normal", "AF", "Other", "Noisy"]
     # plot_samples(train_loader, target_names=target_names)
 
     model = ECGClassifier(cfg)
@@ -226,8 +230,8 @@ if __name__ == "__main__":
         val_loader,
         criterion,
         optimizer,
-        cfg.NUM_EPOCHS,
-        cfg.DEVICE,
+        cfg,
+        save_model_to=save_to,
     )
 
     best_model = ECGClassifier(cfg)
@@ -235,15 +239,24 @@ if __name__ == "__main__":
 
     # Metrics
     plot_evaluation_metric(
-        train_metrics["acc"]["train"], train_metrics["acc"]["val"], metric="Accuracy"
+        train_metrics["acc"]["train"],
+        train_metrics["acc"]["val"],
+        metric="Accuracy",
+        save=cfg.SAVE,
+        save_to=save_to,
     )
     plot_evaluation_metric(
-        train_metrics["f1"]["train"], train_metrics["f1"]["val"], metric="F1-Score"
+        train_metrics["f1"]["train"],
+        train_metrics["f1"]["val"],
+        metric="F1-Score",
+        save=cfg.SAVE,
+        save_to=save_to,
     )
-    plot_loss(train_metrics["loss"]["train"], train_metrics["loss"]["val"])
-    evaluate_best_model(
-        model=best_model,
-        dataloader=val_loader,
-        device=cfg.DEVICE,
-        target_names=target_names,
+    plot_loss(
+        train_metrics["loss"]["train"],
+        train_metrics["loss"]["val"],
+        save=cfg.SAVE,
+        save_to=save_to,
     )
+    evaluate_best_model(model=best_model, dataloader=val_loader, cfg=cfg)
+    print(f"Saved results & best model to {save_to} ...")

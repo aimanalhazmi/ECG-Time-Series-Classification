@@ -26,6 +26,14 @@ def read_zip_binary(zip_path):
     return ragged_array
 
 
+def normalize(signal):
+    std = signal.std()
+    mean = signal.mean()
+    if std > 0:
+        return (signal - mean) / std
+    return signal - mean
+
+
 class ECGDataset(Dataset):
     def __init__(self, signals, labels):
         self.signals = signals
@@ -38,31 +46,30 @@ class ECGDataset(Dataset):
     def __getitem__(self, idx):
         signal = torch.tensor(self.signals[idx], dtype=torch.float)
         length = self.lengths[idx]
-        label = self.labels[idx]
-
-        std = signal.std()
-        mean = signal.mean()
-        if std > 0:
-            signal = (signal - mean) / std
+        if self.labels is not None:
+            label = self.labels[idx]
         else:
-            signal = signal - mean
-        return signal, length, label
+            label = None
+        return normalize(signal), length, label
 
 
-def load_data():
-    """Load and split ECG data using code from data.ipynb"""
-    # Load signals
-    base_dir = "../data"
-    zip_data_path = os.path.join(base_dir, "X_train.zip")
-    print("Reading ECG signals from:", zip_data_path)
-    ecg_signals = read_zip_binary(zip_data_path)
-    print(f"Loaded {len(ecg_signals)} ECG signals.")
+def load(cfg, train_data: bool):
+    """Load ECG data from a zip file."""
 
-    # Load labels
-    labels_path = os.path.join(base_dir, "y_train.csv")
-    print("Reading labels from:", labels_path)
-    labels_df = pd.read_csv(labels_path, header=None, names=["label"])
-    print(f"Loaded {len(labels_df)} labels.")
-    labels = labels_df["label"].values
+    if train_data:
+        # Load signals
+        print("Reading Train ECG signals from:", cfg.X_TRAIN)
+        ecg_signals = read_zip_binary(cfg.X_TRAIN)
+        print(f"Loaded {len(ecg_signals)} Train ECG signals.")
 
-    return ecg_signals, labels
+        # Load labels
+        print("Reading Training labels from:", cfg.Y_TRAIN)
+        labels_df = pd.read_csv(cfg.Y_TRAIN, header=None, names=["label"])
+        print(f"Loaded {len(labels_df)} labels.")
+        labels = labels_df["label"].values
+        return ecg_signals, labels
+    else:
+        print("Reading Test ECG signals from:", cfg.X_TEST)
+        test_ecg_signals = read_zip_binary(cfg.X_TEST)
+        print(f"Loaded {len(test_ecg_signals)} Test ECG signals.")
+        return test_ecg_signals, None
