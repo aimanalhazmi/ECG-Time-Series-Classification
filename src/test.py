@@ -1,9 +1,9 @@
 import pandas as pd
 from torch.utils.data import DataLoader
 from tqdm import tqdm
-from data_loader import load, ECGDataset
-from utils import *
-from model import ECGClassifier
+from src.data_loader import load, ECGDataset
+from src.utils import *
+from src.model import ECGClassifier
 import config
 import os
 from pathlib import Path

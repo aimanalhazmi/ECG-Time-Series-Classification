@@ -1,8 +1,33 @@
 import torch
-from torch.nn.utils.rnn import pad_sequence, pack_padded_sequence, pad_packed_sequence
+from torch.nn.utils.rnn import pad_sequence, pack_padded_sequence
 import os
 from datetime import datetime
+from pathlib import Path
+import config as cfg
 
+
+def get_saved_model(output_dir):
+    model_path = cfg.BEST_MODEL_PATH
+    if os.path.exists(model_path):
+        print(f"Loading best model from {model_path}")
+        model = torch.load(model_path)
+        parent_name = Path(model_path).parent.name
+        model_dir = parent_name.split("_")[-1] if "_" in parent_name else parent_name
+    else:
+        print(f"No best model found at {model_path}")
+        latest_dir = latest_train_dir(output_dir)
+        fallback_model_path = os.path.join(output_dir, latest_dir, "best_model.pt")
+
+        if not os.path.exists(fallback_model_path):
+            raise FileNotFoundError(
+                f"'best_model.pt' not found in latest directory: {fallback_model_path}"
+            )
+        print(f"Loading best model from {fallback_model_path}")
+        model = torch.load(str(fallback_model_path))
+        dir_name = Path(latest_dir).name
+        model_dir = "_".join(dir_name.split("_")[-2:]) if "_" in dir_name else dir_name
+
+    return model, model_dir
 
 def collate_fn(batch):
     data = [item[0] for item in batch]

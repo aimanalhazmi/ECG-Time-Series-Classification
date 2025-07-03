@@ -9,18 +9,17 @@ from sklearn.metrics import f1_score
 import matplotlib.pyplot as plt
 
 import config
-from model import ECGClassifier
-from metrics import (
+from src.model import ECGClassifier
+from src.metrics import (
     plot_evaluation_metric,
     plot_loss,
     plot_confusion_matrix,
     plot_classification_report,
 )
-from data_loader import load, ECGDataset
-from utils import *
+from src.data_loader import load, ECGDataset
+from src.utils import *
 from tqdm import tqdm
 from time import time
-import sys
 
 
 def train(model, train_loader, criterion, optimizer, device):

@@ -10,7 +10,7 @@ else:
     DEVICE = "cpu"
 
 # DATA
-DATA_DIR = "../data"
+DATA_DIR = "data"
 X_TRAIN = os.path.join(DATA_DIR, "X_train.zip")
 Y_TRAIN = os.path.join(DATA_DIR, "y_train.csv")
 X_TEST = os.path.join(DATA_DIR, "X_test.zip")
