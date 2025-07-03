@@ -19,11 +19,21 @@ The ECG signals are sampled at 300 Hz and provided in binary format. Labels are 
 The final deliverables include a report, runnable code for all tasks, and three test prediction files (`base.csv`, `augment.csv`, `reduced.csv`).
 
 
-## Repository Structure
+## Structure
+```
+amls-ecg-time-series-classification/
+├── data/                        # Raw or processed datasets
+├── outputs/                     # Model outputs, logs, predictions, plots
+├── src/                         # Source code modules (e.g., model, train, test, utils, etc.)
+├── data_exploration.ipynb       # Jupyter notebook for initial data analysis
+├── config.py                    # Configuration variables and constants
+├── main.py                      # End-to-end CLI script to run the full pipeline
+├── Makefile                     # Build and setup commands
+├── requirements.txt             # Python dependencies
+└── README.md                    # Project documentatio
+```
 
-
-
-## How to Run
+## Setup
 
 1. **Clone and Navigate to the Project Folder**
    ```bash
@@ -42,8 +52,47 @@ To set up and activate the environment:
     make         
     source .venv/bin/activate
   ```
-      
+
+## How to Run 
+This project uses a script named main.py to handle training and prediction for different tasks.
+
+### Script Location
+Ensure you're in the directory that contains:
+   ```css
+   main.py 
+  ```
+### Command Format
+Run the script using:
+   ```bash
+  python3 main.py --mode <train|predict> --task <task_name>
+  ```
+
+### Available Modes
+- train – Train the model
+- predict – Run predictions using a trained model
+
+### Available Tasks
+
+| Task Name            | Description                                      |
+|----------------------|--------------------------------------------------|
+| `modeling`           | Standard model training and evaluation           |
+| `modeling_augmented` | Modeling using augmented data                    |
+| `reduction`          | Dimensionality reduction + modeling              |
+
+
+### Example Commands
+Train a model using standard data:
+   ```bash
+  python3 main.py --mode train --task modeling
+  ``` 
+Run predictions using the augmented model:
+   ```bash
+  python3 main.py --mode predict --task modeling_augmented
+  ``` 
+Perform dimensionality reduction and train:
+   ```bash
+  python3 main.py --mode train --task reductions
+  ``` 
 ## Team
 - Aiman Al-Hazmi
-- Pia Droop
 - Friedrich Hagedorn
