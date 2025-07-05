@@ -21,8 +21,21 @@ OUTPUTS = "outputs/"
 SAVE = True
 
 # PREDICTIONS ON TEST DATASET
-BEST_MODEL_PATH = "outputs/train_results_1/best_model.pt"
+BEST_MODEL_PATH = "outputs/train_results_baseline/best_model.pt" #Change this
 PREDICTION_BASE_FILE = "base.csv"
+PREDICTION_AUGMENT_FILE = "augment.csv"
+PREDICTION_REDUCTION_FILE = "reduced.csv"
+
+# DATA AUGMENTATION
+DO_ADD_NOISE = True
+DO_AMPLITUDE_SCALING = True
+DO_TIME_SHIFT = True
+DO_FREQUENCY_AUGMENT = True
+NOISE_LEVEL = 0.01
+SCALE_RANGE = (0.8, 1.2)
+SHIFT_RANGE = (-10, 10)
+FREQ_NOISE_LEVEL = 0.05
+
 
 # Training Parameters
 TEST_SIZE = 0.2
@@ -33,7 +46,7 @@ MIN_SEQ_LEN = 500
 
 LEARNING_RATE = 1e-4
 BATCH_SIZE = 16
-NUM_EPOCHS = 20
+NUM_EPOCHS = 1
 NUM_WORKERS = 0
 
 N_FFT = 256

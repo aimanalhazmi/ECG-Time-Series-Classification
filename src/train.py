@@ -2,6 +2,7 @@ import copy
 import torch.nn as nn
 import torch.optim as optim
 from torch.utils.data import DataLoader
+from torch.nn.utils.rnn import pad_packed_sequence
 import numpy as np
 from sklearn.utils.class_weight import compute_class_weight
 from sklearn.model_selection import train_test_split
@@ -132,7 +133,7 @@ def train_evaluate(
     return best_model, train_metrics
 
 
-def evaluate_best_model(model, dataloader, cfg):
+def evaluate_best_model(model, dataloader, cfg, save_to=""):
     model.to(cfg.DEVICE)
     model.eval()
     y_pred = []
@@ -258,4 +259,4 @@ if __name__ == "__main__":
         save_to=save_to,
     )
     evaluate_best_model(model=best_model, dataloader=val_loader, cfg=cfg)
-    print(f"Saved results & best model to {save_to} ...")
+    print(f"Saved results & best model to '/{'/'.join(save_to.strip('/').split('/')[-3:])}' ...")

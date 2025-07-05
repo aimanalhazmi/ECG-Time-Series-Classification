@@ -35,22 +35,27 @@ def normalize(signal):
 
 
 class ECGDataset(Dataset):
-    def __init__(self, signals, labels):
+    def __init__(self, signals, labels, transform=None):
         self.signals = signals
         self.labels = labels
         self.lengths = [len(signal) for signal in signals]
+        self.transform = transform
 
     def __len__(self):
         return len(self.signals)
 
     def __getitem__(self, idx):
-        signal = torch.tensor(self.signals[idx], dtype=torch.float)
+        signal = self.signals[idx]
+        if self.transform:
+            signal = self.transform(signal)
+        signal = torch.tensor(signal, dtype=torch.float)
+        signal = normalize(signal)
         length = self.lengths[idx]
         if self.labels is not None:
             label = self.labels[idx]
         else:
             label = None
-        return normalize(signal), length, label
+        return signal, length, label
 
 
 def load(cfg, train_data: bool):

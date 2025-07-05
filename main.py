@@ -1,6 +1,7 @@
 import argparse
 import config
 from src.data_loader import load, ECGDataset
+from src.transforms import ECGTransform
 from src.train import train_evaluate, evaluate_best_model
 from src.test import predict
 from src.utils import *
@@ -17,10 +18,8 @@ from src.metrics import (
     plot_loss)
 from sklearn.model_selection import train_test_split
 
-def train_pipeline(augmented: bool = False, reduction: bool=False):
+def train_pipeline(augmented: bool = False, reduced: bool=False):
     cfg = config
-    # Define and create output directory
-    save_to = create_dir(cfg.OUTPUTS, "train_results")
 
     ecg_signals, labels = load(cfg, train_data=True)
 
@@ -35,8 +34,26 @@ def train_pipeline(augmented: bool = False, reduction: bool=False):
     print(
         f"Split completed: {len(X_train)} training samples and {len(X_val)} validation samples."
     )
-    train_dataset = ECGDataset(X_train, y_train)
-    val_dataset = ECGDataset(X_val, y_val)
+
+
+    if augmented:
+        print("Augmenting ECG signals...")
+        transform = ECGTransform(cfg)
+        save_to = create_dir(cfg.OUTPUTS, "train_results_augmented")
+    elif reduced:
+        print("Reducing ECG signals...")
+        # ToDo: Reducing
+
+        print("Augmenting ECG signals...")
+        transform = ECGTransform(cfg)
+        save_to = create_dir(cfg.OUTPUTS, "train_results_reduced")
+    else:
+        transform = None
+        save_to = create_dir(cfg.OUTPUTS, "train_results_baseline")
+
+
+    train_dataset = ECGDataset(X_train, y_train, transform=transform)
+    val_dataset = ECGDataset(X_val, y_val, transform=None)
 
     class_weights = compute_class_weight(
         class_weight="balanced", classes=np.unique(labels), y=labels
@@ -98,11 +115,11 @@ def train_pipeline(augmented: bool = False, reduction: bool=False):
         save=cfg.SAVE,
         save_to=save_to,
     )
-    evaluate_best_model(model=best_model, dataloader=val_loader, cfg=cfg)
-    print(f"Saved results & best model to {save_to} ...")
+    evaluate_best_model(model=best_model, dataloader=val_loader, cfg=cfg, save_to=save_to)
+    print(f"Saved results & best model to '/{'/'.join(save_to.strip('/').split('/')[-3:])}' ...")
 
 
-def test_pipeline():
+def test_pipeline(prediction_file):
     cfg = config
     output_dir = cfg.OUTPUTS
 
@@ -127,17 +144,27 @@ def test_pipeline():
         model=model,
         dataloader=test_loader,
         device=cfg.DEVICE,
-        prediction_base_file=os.path.join(save_to, cfg.PREDICTION_BASE_FILE),
+        prediction_file=os.path.join(save_to, prediction_file),
     )
 
 
-def choose_task(task):
+def choose_train_task(task):
     if task == "modeling":
-        train_pipeline(augmented=False, reduction=False)
+        train_pipeline(augmented=False, reduced=False)
     elif task == "modeling_augmented":
-        train_pipeline(augmented=True, reduction=False)
+        train_pipeline(augmented=True, reduced=False)
     elif task == "reduction":
-        train_pipeline(augmented=False, reduction=True)
+        train_pipeline(augmented=False, reduced=True)
+    else:
+        raise ValueError(f"Unknown task: {task}")
+
+def choose_test_pipeline(task):
+    if task == "modeling":
+        test_pipeline(config.PREDICTION_BASE_FILE)
+    elif task == "modeling_augmented":
+        test_pipeline(config.PREDICTION_AUGMENT_FILE)
+    elif task == "reduction":
+        test_pipeline(config.PREDICTION_REDUCTION_FILE)
     else:
         raise ValueError(f"Unknown task: {task}")
 
@@ -163,9 +190,11 @@ def main():
     args = parser.parse_args()
 
     if args.mode == "train":
-        choose_task(task=args.task)
+        choose_train_task(task=args.task)
     elif args.mode == "predict":
-        test_pipeline()
+        choose_test_pipeline(task=args.task)
+    else:
+        raise ValueError(f"Unknown mode: {args.mode}")
 
 if __name__ == "__main__":
     main()

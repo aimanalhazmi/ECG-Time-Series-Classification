@@ -9,7 +9,7 @@ import os
 from pathlib import Path
 
 
-def predict(model, dataloader, device, prediction_base_file):
+def predict(model, dataloader, device, prediction_file):
     model.to(device)
     model.eval()
     y_pred = []
@@ -20,11 +20,10 @@ def predict(model, dataloader, device, prediction_base_file):
             _, predicted = torch.max(outputs.data, 1)
             y_pred.extend(predicted.cpu().numpy())
     pd.DataFrame(y_pred, columns=["y_pred"]).to_csv(
-        str(prediction_base_file), index=False, sep=";"
+        str(prediction_file), index=False, sep=";"
     )
     print(
-        f"Prediction completed successfully. Output saved to '{prediction_base_file}'."
-    )
+        f"Prediction completed successfully. Output saved to '/{'/'.join(prediction_file.strip('/').split('/')[-3:])}'.")
 
 
 def get_saved_model(output_dir):
@@ -76,5 +75,5 @@ if __name__ == "__main__":
         model=model,
         dataloader=test_loader,
         device=cfg.DEVICE,
-        prediction_base_file=os.path.join(save_to, cfg.PREDICTION_BASE_FILE),
+        prediction_file=os.path.join(save_to, cfg.PREDICTION_BASE_FILE),
     )

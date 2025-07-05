@@ -44,7 +44,7 @@ def collate_fn(batch):
 
 
 def latest_train_dir(output_dir):
-    # Find the most recent train_results_1* directory
+    # Find the most recent train_results_baseline* directory
     train_dirs = [
         d
         for d in os.listdir(output_dir)

@@ -73,11 +73,11 @@ Run the script using:
 
 ### Available Tasks
 
-| Task Name            | Description                                      |
-|----------------------|--------------------------------------------------|
-| `modeling`           | Standard model training and evaluation           |
-| `modeling_augmented` | Modeling using augmented data                    |
-| `reduction`          | Dimensionality reduction + modeling              |
+| Task Name            | Description                                             |
+|----------------------|---------------------------------------------------------|
+| `modeling`           | Standard model training and evaluation                  |
+| `modeling_augmented` | Modeling using augmented data                           |
+| `reduction`          | Dimensionality reduction + modeling with augmented data |
 
 
 ### Example Commands
