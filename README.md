@@ -64,12 +64,14 @@ Ensure you're in the directory that contains:
 ### Command Format
 Run the script using:
    ```bash
-  python3 main.py --mode <train|predict> --task <task_name>
+  python3 main.py --mode <train|predict> --task <task_name> [--model path]
   ```
 
 ### Available Modes
 - train – Train the model
 - predict – Run predictions using a trained model
+
+Note: The --model argument is only required when --mode is set to predict.
 
 ### Available Tasks
 
@@ -87,7 +89,7 @@ Train a model using standard data:
   ``` 
 Run predictions using the augmented model:
    ```bash
-  python3 main.py --mode predict --task modeling_augmented
+  python3 main.py --mode predict --task modeling_augmented --model outputs/train_results_augmented_20250706_000413/best_model.pt
   ``` 
 Perform dimensionality reduction and train:
    ```bash
