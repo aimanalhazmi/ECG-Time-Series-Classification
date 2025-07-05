@@ -21,7 +21,7 @@ OUTPUTS = "outputs/"
 SAVE = True
 
 # PREDICTIONS ON TEST DATASET
-BEST_MODEL_PATH = "outputs/train_results_baseline/best_model.pt" #Change this
+BEST_MODEL_PATH = ""
 PREDICTION_BASE_FILE = "base.csv"
 PREDICTION_AUGMENT_FILE = "augment.csv"
 PREDICTION_REDUCTION_FILE = "reduced.csv"

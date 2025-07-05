@@ -119,7 +119,7 @@ def train_pipeline(augmented: bool = False, reduced: bool=False):
     print(f"Saved results & best model to '/{'/'.join(save_to.strip('/').split('/')[-3:])}' ...")
 
 
-def test_pipeline(prediction_file):
+def test_pipeline(prediction_file, model_path):
     cfg = config
     output_dir = cfg.OUTPUTS
 
@@ -134,7 +134,11 @@ def test_pipeline(prediction_file):
         num_workers=cfg.NUM_WORKERS,
     )
 
-    saved_model, model_dir = get_saved_model(output_dir)
+    if model_path:
+        saved_model, model_dir = get_saved_model(output_dir, model_path=model_path)
+    else:
+        model_path = cfg.BEST_MODEL_PATH
+        saved_model, model_dir = get_saved_model(output_dir, model_path=model_path)
 
     model = ECGClassifier(cfg)
     model.load_state_dict(saved_model)
@@ -158,13 +162,13 @@ def choose_train_task(task):
     else:
         raise ValueError(f"Unknown task: {task}")
 
-def choose_test_pipeline(task):
+def choose_test_pipeline(task, model_path=""):
     if task == "modeling":
-        test_pipeline(config.PREDICTION_BASE_FILE)
+        test_pipeline(config.PREDICTION_BASE_FILE, model_path)
     elif task == "modeling_augmented":
-        test_pipeline(config.PREDICTION_AUGMENT_FILE)
+        test_pipeline(config.PREDICTION_AUGMENT_FILE, model_path)
     elif task == "reduction":
-        test_pipeline(config.PREDICTION_REDUCTION_FILE)
+        test_pipeline(config.PREDICTION_REDUCTION_FILE, model_path)
     else:
         raise ValueError(f"Unknown task: {task}")
 
@@ -186,13 +190,20 @@ def main():
         required=True,
         help="Specify the task: 'modeling', 'modeling_augmented', or 'reduction'."
     )
+    parser.add_argument(
+        "--model",
+        help="Path to the trained model to use for prediction."
+    )
 
     args = parser.parse_args()
 
     if args.mode == "train":
         choose_train_task(task=args.task)
     elif args.mode == "predict":
-        choose_test_pipeline(task=args.task)
+        if args.model:
+            choose_test_pipeline(task=args.task, model_path=args.model)
+        else:
+            parser.error("--model is required when --mode is 'predict' (provide path to trained .pt model)")
     else:
         raise ValueError(f"Unknown mode: {args.mode}")
 

@@ -26,29 +26,6 @@ def predict(model, dataloader, device, prediction_file):
         f"Prediction completed successfully. Output saved to '/{'/'.join(prediction_file.strip('/').split('/')[-3:])}'.")
 
 
-def get_saved_model(output_dir):
-    model_path = cfg.BEST_MODEL_PATH
-    if os.path.exists(model_path):
-        print(f"Loading best model from {model_path}")
-        model = torch.load(model_path)
-        parent_name = Path(model_path).parent.name
-        model_dir = parent_name.split("_")[-1] if "_" in parent_name else parent_name
-    else:
-        print(f"No best model found at {model_path}")
-        latest_dir = latest_train_dir(output_dir)
-        fallback_model_path = os.path.join(output_dir, latest_dir, "best_model.pt")
-
-        if not os.path.exists(fallback_model_path):
-            raise FileNotFoundError(
-                f"'best_model.pt' not found in latest directory: {fallback_model_path}"
-            )
-        print(f"Loading best model from {fallback_model_path}")
-        model = torch.load(str(fallback_model_path))
-        dir_name = Path(latest_dir).name
-        model_dir = "_".join(dir_name.split("_")[-2:]) if "_" in dir_name else dir_name
-
-    return model, model_dir
-
 
 if __name__ == "__main__":
     cfg = config
@@ -65,7 +42,7 @@ if __name__ == "__main__":
         num_workers=cfg.NUM_WORKERS,
     )
 
-    saved_model, model_dir = get_saved_model(output_dir)
+    saved_model, model_dir = get_saved_model(output_dir, model_path=cfg.BEST_MODEL_PATH)
 
     model = ECGClassifier(cfg)
     model.load_state_dict(saved_model)

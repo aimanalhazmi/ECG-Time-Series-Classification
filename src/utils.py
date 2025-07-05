@@ -3,11 +3,9 @@ from torch.nn.utils.rnn import pad_sequence, pack_padded_sequence
 import os
 from datetime import datetime
 from pathlib import Path
-import config as cfg
 
 
-def get_saved_model(output_dir):
-    model_path = cfg.BEST_MODEL_PATH
+def get_saved_model(output_dir, model_path=""):
     if os.path.exists(model_path):
         print(f"Loading best model from {model_path}")
         model = torch.load(model_path)
