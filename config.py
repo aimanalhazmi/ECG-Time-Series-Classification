@@ -32,7 +32,7 @@ DO_AMPLITUDE_SCALING = True
 DO_TIME_SHIFT = True
 DO_FREQUENCY_AUGMENT = True
 DO_TIME_STRETCHING = True
-DO_RANDOM_CROP = True
+DO_RANDOM_CROP = False
 
 NOISE_LEVEL = 0.01 # Noise level for adding Gaussian noise
 SCALE_RANGE = (0.8, 1.2) # Amplitude scaling range from 80% to 120%
@@ -50,9 +50,9 @@ MIN_SEQ_LEN = 500
 
 LEARNING_RATE = 1e-4
 BATCH_SIZE = 16
-NUM_EPOCHS = 1
+NUM_EPOCHS = 100
 NUM_WORKERS = 0
-DROPOUT = 0.4
+DROPOUT = 0.5
 
 N_FFT = 256
 HOP_LENGTH = N_FFT // 4
