@@ -57,7 +57,7 @@ This project includes multiple model architectures, which can be selected in the
 
 ## How to Run
 
-The workflow is managed by configuring settings in `config.py` and then executing the `train.py` and `test.py` scripts.
+This project uses a script named main.py to handle training and prediction for different tasks.
 
 ### 1. Configure the Model
 
