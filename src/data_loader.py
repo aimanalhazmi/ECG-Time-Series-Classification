@@ -38,7 +38,6 @@ class ECGDataset(Dataset):
     def __init__(self, signals, labels, transform=None):
         self.signals = signals
         self.labels = labels
-        self.lengths = [len(signal) for signal in signals]
         self.transform = transform
 
     def __len__(self):
@@ -48,18 +47,23 @@ class ECGDataset(Dataset):
         signal = self.signals[idx]
         if self.transform:
             signal = self.transform(signal)
+
+        length = len(signal)
         signal = torch.tensor(signal, dtype=torch.float)
         signal = normalize(signal)
-        length = self.lengths[idx]
+
         if self.labels is not None:
             label = self.labels[idx]
         else:
             label = None
+
         return signal, length, label
 
 
 def load(cfg, train_data: bool):
-    """Load ECG data from a zip file."""
+    """
+    Load ECG data from a zip file.
+    """
 
     if train_data:
         # Load signals

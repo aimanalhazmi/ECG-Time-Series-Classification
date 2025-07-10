@@ -31,11 +31,14 @@ DO_ADD_NOISE = True
 DO_AMPLITUDE_SCALING = True
 DO_TIME_SHIFT = True
 DO_FREQUENCY_AUGMENT = True
-NOISE_LEVEL = 0.01
-SCALE_RANGE = (0.8, 1.2)
-SHIFT_RANGE = (-10, 10)
-FREQ_NOISE_LEVEL = 0.05
+DO_TIME_STRETCHING = True
+DO_RANDOM_CROP = True
 
+NOISE_LEVEL = 0.01 # Noise level for adding Gaussian noise
+SCALE_RANGE = (0.8, 1.2) # Amplitude scaling range from 80% to 120%
+SHIFT_RANGE = (-10, 10) # Shift signal by -10 to +10 samples
+FREQ_NOISE_LEVEL = 0.05 # Frequency noise level for frequency augmentation
+STRETCH_RANGE = (0.9, 1.1) # Stretch signal to 90%-110% of its length
 
 # Training Parameters
 MODEL_NAME = "ECGClassifier"  # "ECGClassifier" or "SimplifiedECGClassifier"

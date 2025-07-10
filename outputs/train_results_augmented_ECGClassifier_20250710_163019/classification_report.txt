@@ -1,0 +1,10 @@
+              precision    recall  f1-score   support
+
+      Normal       0.73      0.69      0.71       728
+          AF       0.25      0.40      0.31       110
+       Other       0.42      0.31      0.35       353
+       Noisy       0.27      0.71      0.40        45
+
+    accuracy                           0.55      1236
+   macro avg       0.42      0.53      0.44      1236
+weighted avg       0.58      0.55      0.56      1236
