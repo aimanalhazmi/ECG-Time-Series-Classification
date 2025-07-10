@@ -73,8 +73,19 @@ MODEL_NAME = "ECGClassifier"  # or "SimplifiedECGClassifier"
 Run the training script from the root directory of the project. It will use the model specified in `config.py`.
 
 ```bash
-python3 src/train.py
+python3 main.py --mode train --task modeling
 ```
+
+### Available Modes
+- train – Train the model
+- predict – Run predictions using a trained model
+
+### Available Tasks
+| Task Name            | Description                                             |
+|----------------------|---------------------------------------------------------|
+| `modeling`           | Standard model training and evaluation                  |
+| `modeling_augmented` | Modeling using augmented data                           |
+| `reduction`          | Dimensionality reduction + modeling with augmented data |
 
 -   The script will train the selected model, split the data, and evaluate on a validation set.
 -   Results, including performance plots and the best model weights (`best_model.pt`), will be saved to a uniquely named directory that includes the model name and a timestamp, for example: `outputs/train_results_ECGClassifier_20250708_153000/`.
@@ -83,8 +94,9 @@ python3 src/train.py
 
 To generate predictions on the test set, run the testing script.
 
+e.g. 
 ```bash
-python3 src/test.py
+python3 main.py --mode predict --task modeling_augmented --model outputs/train_results_augmented_20250706_000413/best_model.pt
 ```
 
 -   **Automatic Model Detection**: By default, the script automatically finds the most recently trained model in the `outputs/` directory. It intelligently infers the model architecture (e.g., `ECGClassifier`) from the directory name and loads the correct model.
