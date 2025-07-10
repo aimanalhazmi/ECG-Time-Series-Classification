@@ -16,8 +16,7 @@ The ECG signals are sampled at 300 Hz and provided in binary format. Labels are 
 3. **Data Augmentation & Feature Engineering**: Enhance model robustness with time/frequency domain augmentations and optional feature extraction.
 4. **Data Reduction**: Reduce dataset size using sampling, compression, or embeddings, and evaluate model performance at different reduction levels.
 
-The final deliverables include a report, runnable code for all tasks, and three test prediction files (`base.csv`, `augment.csv`, `reduced.csv`).
-
+The final deliverables include a report, runnable code for all tasks, and test prediction files.
 
 ## Structure
 ```
@@ -27,74 +26,76 @@ amls-ecg-time-series-classification/
 ├── src/                         # Source code modules (e.g., model, train, test, utils, etc.)
 ├── data_exploration.ipynb       # Jupyter notebook for initial data analysis
 ├── config.py                    # Configuration variables and constants
-├── main.py                      # End-to-end CLI script to run the full pipeline
-├── Makefile                     # Build and setup commands
 ├── requirements.txt             # Python dependencies
-└── README.md                    # Project documentatio
+└── README.md                    # Project documentation
 ```
 
 ## Setup
 
-1. **Clone and Navigate to the Project Folder**
-   ```bash
-   cd amls-ecg-time-series-classification
-   ```
-2. **Create and Activate a Virtual Environment**
+1.  **Clone and Navigate to the Project Folder**
+    ```bash
+    cd amls-ecg-time-series-classification
+    ```
+2.  **Create and Activate a Virtual Environment**
 
-- **make or make install:**  Create .venv and install Python dependencies
+    -   **`make` or `make install`**: Creates a `.venv` and installs Python dependencies.
+    -   **`make activate`**: Prints the activation command for your shell.
+    -   **`make clean`**: Deletes the virtual environment.
 
-- **make activate:**  Prints the activation command
-
-- **make clean:**  Deletes the virtual environment
-
-To set up and activate the environment:
-   ```bash
-    make         
+    To set up and activate the environment:
+    ```bash
+    make
     source .venv/bin/activate
-  ```
+    ```
 
-## How to Run 
-This project uses a script named main.py to handle training and prediction for different tasks.
+## Model Architectures
 
-### Script Location
-Ensure you're in the directory that contains:
-   ```css
-   main.py 
-  ```
-### Command Format
-Run the script using:
-   ```bash
-  python3 main.py --mode <train|predict> --task <task_name> [--model path]
-  ```
+This project includes multiple model architectures, which can be selected in the `config.py` file.
 
-### Available Modes
-- train – Train the model
-- predict – Run predictions using a trained model
+-   **`ECGClassifier`**: The primary model, which uses a combination of Short-Time Fourier Transform (STFT) to create a spectrogram, followed by 2D Convolutional layers and an LSTM to classify the sequence.
+-   **`SimplifiedECGClassifier`**: A simpler baseline model that uses a bidirectional LSTM directly on the raw, normalized time-series data without any frequency-domain transformation.
 
-Note: The --model argument is only required when --mode is set to predict.
+## How to Run
 
-### Available Tasks
+The workflow is managed by configuring settings in `config.py` and then executing the `train.py` and `test.py` scripts.
 
-| Task Name            | Description                                             |
-|----------------------|---------------------------------------------------------|
-| `modeling`           | Standard model training and evaluation                  |
-| `modeling_augmented` | Modeling using augmented data                           |
-| `reduction`          | Dimensionality reduction + modeling with augmented data |
+### 1. Configure the Model
 
+Open `config.py` and set the `MODEL_NAME` variable to the architecture you want to train or evaluate.
 
-### Example Commands
-Train a model using standard data:
-   ```bash
-  python3 main.py --mode train --task modeling
-  ``` 
-Run predictions using the augmented model:
-   ```bash
-  python3 main.py --mode predict --task modeling_augmented --model outputs/train_results_augmented_20250706_000413/best_model.pt
-  ``` 
-Perform dimensionality reduction and train:
-   ```bash
-  python3 main.py --mode train --task reductions
-  ``` 
+```python
+# In config.py
+MODEL_NAME = "ECGClassifier"  # or "SimplifiedECGClassifier"
+```
+
+### 2. Train a Model
+
+Run the training script from the root directory of the project. It will use the model specified in `config.py`.
+
+```bash
+python3 src/train.py
+```
+
+-   The script will train the selected model, split the data, and evaluate on a validation set.
+-   Results, including performance plots and the best model weights (`best_model.pt`), will be saved to a uniquely named directory that includes the model name and a timestamp, for example: `outputs/train_results_ECGClassifier_20250708_153000/`.
+
+### 3. Run Predictions
+
+To generate predictions on the test set, run the testing script.
+
+```bash
+python3 src/test.py
+```
+
+-   **Automatic Model Detection**: By default, the script automatically finds the most recently trained model in the `outputs/` directory. It intelligently infers the model architecture (e.g., `ECGClassifier`) from the directory name and loads the correct model.
+-   **Specifying a Model**: To use a specific model file, update the `BEST_MODEL_PATH` variable in `config.py` with the direct path to your `best_model.pt` file.
+    ```python
+    # In config.py, to specify a model for prediction
+    BEST_MODEL_PATH = "outputs/train_results_SimplifiedECGClassifier_20250708_160000/best_model.pt"
+    ```
+-   Prediction results will be saved in a new directory named after the model being tested, such as `outputs/test_results_SimplifiedECGClassifier/`.
+
 ## Team
-- Aiman Al-Hazmi
-- Friedrich Hagedorn
+
+-   Aiman Al-Hazmi
+-   Friedrich Hagedorn

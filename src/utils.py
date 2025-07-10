@@ -6,13 +6,37 @@ from pathlib import Path
 
 
 def get_saved_model(output_dir, model_path=""):
+    """
+    Finds and loads a saved model state dictionary, and infers the model name from the path.
+
+    Args:
+        output_dir (str): The base directory where training results are saved.
+        model_path (str, optional): A direct path to a 'best_model.pt' file.
+
+    Returns:
+        tuple: A tuple containing:
+            - model_state_dict (dict): The loaded model's state dictionary.
+            - model_name (str): The inferred name of the model architecture.
+    """
+
+    def _get_model_name_from_path(path):
+        dir_name = Path(path).parent.name
+        parts = dir_name.split("_")
+        # Expects dir name like: train_results_MODELNAME_TIMESTAMP
+        if len(parts) >= 3 and parts[0] == "train" and parts[1] == "results":
+            return parts[2]
+        print(
+            f"Could not infer model name from path '{dir_name}'. "
+            f"Using directory name as identifier."
+        )
+        return dir_name
+
+    final_model_path = ""
     if os.path.exists(model_path):
         print(f"Loading best model from {model_path}")
-        model = torch.load(model_path)
-        parent_name = Path(model_path).parent.name
-        model_dir = parent_name.split("_")[-1] if "_" in parent_name else parent_name
+        final_model_path = model_path
     else:
-        print(f"No best model found at {model_path}")
+        print(f"No best model found at {model_path}, searching latest in {output_dir}")
         latest_dir = latest_train_dir(output_dir)
         fallback_model_path = os.path.join(output_dir, latest_dir, "best_model.pt")
 
@@ -21,15 +45,17 @@ def get_saved_model(output_dir, model_path=""):
                 f"'best_model.pt' not found in latest directory: {fallback_model_path}"
             )
         print(f"Loading best model from {fallback_model_path}")
-        model = torch.load(str(fallback_model_path))
-        dir_name = Path(latest_dir).name
-        model_dir = "_".join(dir_name.split("_")[-2:]) if "_" in dir_name else dir_name
+        final_model_path = fallback_model_path
 
-    return model, model_dir
+    model_state_dict = torch.load(str(final_model_path))
+    model_name = _get_model_name_from_path(final_model_path)
+
+    return model_state_dict, model_name
+
 
 def collate_fn(batch):
     data = [item[0] for item in batch]
-    lengths = torch.tensor([item[1] for item in batch], dtype=torch.long)
+    lengths = torch.tensor([len(d) for d in data], dtype=torch.long)
     if batch[0][2] is not None:
         labels = torch.tensor([item[2] for item in batch], dtype=torch.long)
     else:
@@ -42,14 +68,14 @@ def collate_fn(batch):
 
 
 def latest_train_dir(output_dir):
-    # Find the most recent train_results_baseline* directory
+    # Find the most recent train_results* directory
     train_dirs = [
         d
         for d in os.listdir(output_dir)
         if d.startswith("train_results") and os.path.isdir(os.path.join(output_dir, d))
     ]
     if not train_dirs:
-        raise FileNotFoundError("No training result directories found.")
+        raise FileNotFoundError(f"No training result directories found in {output_dir}.")
 
     latest_dir = max(
         train_dirs,

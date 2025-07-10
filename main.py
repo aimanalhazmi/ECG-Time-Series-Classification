@@ -6,20 +6,31 @@ from src.train import train_evaluate, evaluate_best_model
 from src.test import predict
 from src.utils import *
 
-
 import torch.nn as nn
 import torch.optim as optim
 from torch.utils.data import DataLoader
 import numpy as np
 from sklearn.utils.class_weight import compute_class_weight
-from src.model import ECGClassifier
+from src.model import ModelSelector
 from src.metrics import (
     plot_evaluation_metric,
     plot_loss)
 from sklearn.model_selection import train_test_split
 
-def train_pipeline(augmented: bool = False, reduced: bool=False):
+def train_pipeline(augmented: bool = False, reduced: bool = False):
     cfg = config
+
+    if reduced:
+        task_prefix = "train_results_reduced"
+        print("Starting pipeline for REDUCTION task...")
+    elif augmented:
+        task_prefix = "train_results_augmented"
+        print("Starting pipeline for AUGMENTED MODELING task...")
+    else:
+        task_prefix = "train_results_baseline"
+        print("Starting pipeline for BASELINE MODELING task...")
+
+    save_to = create_dir(cfg.OUTPUTS, f"{task_prefix}_{cfg.MODEL_NAME}")
 
     ecg_signals, labels = load(cfg, train_data=True)
 
@@ -31,92 +42,60 @@ def train_pipeline(augmented: bool = False, reduced: bool=False):
         stratify=labels,
         random_state=cfg.RANDOM_SEED,
     )
-    print(
-        f"Split completed: {len(X_train)} training samples and {len(X_val)} validation samples."
-    )
+    print(f"Split completed: {len(X_train)} training samples and {len(X_val)} validation samples.")
 
-
-    if augmented:
-        print("Augmenting ECG signals...")
+    transform = None
+    if augmented or reduced:
+        print("Applying data augmentation to the training set...")
         transform = ECGTransform(cfg)
-        save_to = create_dir(cfg.OUTPUTS, "train_results_augmented")
-    elif reduced:
-        print("Reducing ECG signals...")
-        # ToDo: Reducing
 
-        print("Augmenting ECG signals...")
-        transform = ECGTransform(cfg)
-        save_to = create_dir(cfg.OUTPUTS, "train_results_reduced")
-    else:
-        transform = None
-        save_to = create_dir(cfg.OUTPUTS, "train_results_baseline")
-
+    if reduced:
+        print("Applying data reduction...")
+        # TODO: Implement reduction logic here on X_train and X_val if needed
 
     train_dataset = ECGDataset(X_train, y_train, transform=transform)
-    val_dataset = ECGDataset(X_val, y_val, transform=None)
+    val_dataset = ECGDataset(X_val, y_val, transform=None)  # No augmentation on validation set
+
+    train_loader = DataLoader(
+        train_dataset, batch_size=cfg.BATCH_SIZE, shuffle=True,
+        collate_fn=collate_fn, num_workers=cfg.NUM_WORKERS,
+    )
+    val_loader = DataLoader(
+        val_dataset, batch_size=cfg.BATCH_SIZE, shuffle=False,
+        collate_fn=collate_fn, num_workers=cfg.NUM_WORKERS,
+    )
+
+    print(f"Initializing model: {cfg.MODEL_NAME}")
+    model = ModelSelector.get_model(cfg.MODEL_NAME, cfg)
 
     class_weights = compute_class_weight(
         class_weight="balanced", classes=np.unique(labels), y=labels
     )
     class_weights = torch.tensor(class_weights, dtype=torch.float).to(cfg.DEVICE)
-
-    train_loader = DataLoader(
-        train_dataset,
-        batch_size=cfg.BATCH_SIZE,
-        shuffle=True,
-        collate_fn=collate_fn,
-        num_workers=cfg.NUM_WORKERS,
-    )
-    val_loader = DataLoader(
-        val_dataset,
-        batch_size=cfg.BATCH_SIZE,
-        shuffle=False,
-        collate_fn=collate_fn,
-        num_workers=cfg.NUM_WORKERS,
-    )
-
-    # plot_samples(train_loader, target_names=target_names)
-
-    model = ECGClassifier(cfg)
     criterion = nn.CrossEntropyLoss(weight=class_weights)
     optimizer = optim.Adam(model.parameters(), lr=cfg.LEARNING_RATE)
 
     best_model_dict, train_metrics = train_evaluate(
-        model,
-        train_loader,
-        val_loader,
-        criterion,
-        optimizer,
-        cfg,
-        save_model_to=save_to,
+        model, train_loader, val_loader, criterion, optimizer, cfg, save_model_to=save_to,
     )
 
-    best_model = ECGClassifier(cfg)
-    best_model.load_state_dict(best_model_dict)
+    model.load_state_dict(best_model_dict)
 
-    # Metrics
+    print("Training completed successfully. Plotting evaluation metrics...")
     plot_evaluation_metric(
-        train_metrics["acc"]["train"],
-        train_metrics["acc"]["val"],
-        metric="Accuracy",
-        save=cfg.SAVE,
-        save_to=save_to,
+        train_metrics["acc"]["train"], train_metrics["acc"]["val"],
+        metric="Accuracy", save=cfg.SAVE, save_to=save_to,
     )
     plot_evaluation_metric(
-        train_metrics["f1"]["train"],
-        train_metrics["f1"]["val"],
-        metric="F1-Score",
-        save=cfg.SAVE,
-        save_to=save_to,
+        train_metrics["f1"]["train"], train_metrics["f1"]["val"],
+        metric="F1-Score", save=cfg.SAVE, save_to=save_to,
     )
     plot_loss(
-        train_metrics["loss"]["train"],
-        train_metrics["loss"]["val"],
-        save=cfg.SAVE,
-        save_to=save_to,
+        train_metrics["loss"]["train"], train_metrics["loss"]["val"],
+        save=cfg.SAVE, save_to=save_to,
     )
-    evaluate_best_model(model=best_model, dataloader=val_loader, cfg=cfg, save_to=save_to)
-    print(f"Saved results & best model to '/{'/'.join(save_to.strip('/').split('/')[-3:])}' ...")
+    evaluate_best_model(model=model, dataloader=val_loader, cfg=cfg, save_to=save_to)
+    print(f"Saved results & best model to '/{'/'.join(save_to.strip('/').split('/')[-2:])}' ...")
 
 
 def test_pipeline(prediction_file, model_path):
@@ -124,26 +103,19 @@ def test_pipeline(prediction_file, model_path):
     output_dir = cfg.OUTPUTS
 
     ecg_signals, _ = load(cfg, train_data=False)
-
     test_dataset = ECGDataset(ecg_signals, None)
     test_loader = DataLoader(
-        test_dataset,
-        batch_size=cfg.BATCH_SIZE,
-        shuffle=False,
-        collate_fn=collate_fn,
-        num_workers=cfg.NUM_WORKERS,
+        test_dataset, batch_size=cfg.BATCH_SIZE, shuffle=False,
+        collate_fn=collate_fn, num_workers=cfg.NUM_WORKERS,
     )
 
-    if model_path:
-        saved_model, model_dir = get_saved_model(output_dir, model_path=model_path)
-    else:
-        model_path = cfg.BEST_MODEL_PATH
-        saved_model, model_dir = get_saved_model(output_dir, model_path=model_path)
+    state_dict, model_name = get_saved_model(output_dir, model_path=model_path)
+    print(f"Inferred model architecture: {model_name}")
 
-    model = ECGClassifier(cfg)
-    model.load_state_dict(saved_model)
+    model = ModelSelector.get_model(model_name, cfg)
+    model.load_state_dict(state_dict)
 
-    save_to = create_dir(output_dir, f"test_results_{model_dir}", use_timestamp=False)
+    save_to = create_dir(output_dir, f"test_results_{model_name}", use_timestamp=False)
     predict(
         model=model,
         dataloader=test_loader,
@@ -158,7 +130,7 @@ def choose_train_task(task):
     elif task == "modeling_augmented":
         train_pipeline(augmented=True, reduced=False)
     elif task == "reduction":
-        train_pipeline(augmented=False, reduced=True)
+        train_pipeline(augmented=True, reduced=True)
     else:
         raise ValueError(f"Unknown task: {task}")
 
@@ -171,7 +143,6 @@ def choose_test_pipeline(task, model_path=""):
         test_pipeline(config.PREDICTION_REDUCTION_FILE, model_path)
     else:
         raise ValueError(f"Unknown task: {task}")
-
 
 
 def main():
@@ -192,7 +163,7 @@ def main():
     )
     parser.add_argument(
         "--model",
-        help="Path to the trained model to use for prediction."
+        help="Path to the trained model (.pt file) to use for prediction."
     )
 
     args = parser.parse_args()

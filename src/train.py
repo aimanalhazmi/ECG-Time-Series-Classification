@@ -10,7 +10,7 @@ from sklearn.metrics import f1_score
 import matplotlib.pyplot as plt
 
 import config
-from src.model import ECGClassifier
+from src.model import ModelSelector
 from src.metrics import (
     plot_evaluation_metric,
     plot_loss,
@@ -81,7 +81,7 @@ def evaluate(model, val_loader, criterion, device):
 
 
 def train_evaluate(
-    model, train_loader, val_loader, criterion, optimizer, cfg, save_model_to
+        model, train_loader, val_loader, criterion, optimizer, cfg, save_model_to
 ):
     num_epochs = cfg.NUM_EPOCHS
     device = cfg.DEVICE
@@ -89,7 +89,7 @@ def train_evaluate(
     model.to(device)
 
     best_val_loss = float("inf")
-    best_model = None
+    best_model_state = None
 
     train_loss_list = []
     val_loss_list = []
@@ -101,7 +101,7 @@ def train_evaluate(
     val_f1_list = []
     start_time = time()
     for epoch in range(num_epochs):
-        print(f"{'-'*25} Epoch {epoch + 1}/{num_epochs} {'-'*25}")
+        print(f"{'-' * 25} Epoch {epoch + 1}/{num_epochs} {'-' * 25}")
         train_loss, train_acc, train_f1_score = train(
             model, train_loader, criterion, optimizer, device
         )
@@ -120,17 +120,17 @@ def train_evaluate(
 
         if val_loss < best_val_loss:
             best_val_loss = val_loss
-            best_model = copy.deepcopy(model.state_dict())
-            torch.save(best_model, os.path.join(save_model_to, "best_model.pt"))
+            best_model_state = copy.deepcopy(model.state_dict())
+            torch.save(best_model_state, os.path.join(save_model_to, "best_model.pt"))
             print("Saving new best model..")
-        print(f"{'-'*25} End of Epoch {epoch+1} {'-'*25}")
+        print(f"{'-' * 25} End of Epoch {epoch + 1} {'-' * 25}")
 
     end_time = time()
     print(f"Training completed in {(end_time - start_time) / 60:.2f} minutes.")
     train_metrics["acc"] = {"train": train_acc_list, "val": val_acc_list}
     train_metrics["f1"] = {"train": train_f1_list, "val": val_f1_list}
     train_metrics["loss"] = {"train": train_loss_list, "val": val_loss_list}
-    return best_model, train_metrics
+    return best_model_state, train_metrics
 
 
 def evaluate_best_model(model, dataloader, cfg, save_to=""):
@@ -179,8 +179,8 @@ def plot_samples(train_loader, target_names):
 
 if __name__ == "__main__":
     cfg = config
-    # Define and create output directory
-    save_to = create_dir(cfg.OUTPUTS, "train_results")
+    # Define and create output directory based on the model name in config
+    save_to = create_dir(cfg.OUTPUTS, f"train_results_{cfg.MODEL_NAME}")
 
     ecg_signals, labels = load(cfg, train_data=True)
 
@@ -218,9 +218,12 @@ if __name__ == "__main__":
         num_workers=cfg.NUM_WORKERS,
     )
 
-    # plot_samples(train_loader, target_names=target_names)
+    # plot_samples(train_loader, target_names=cfg.TARGET_NAMES)
 
-    model = ECGClassifier(cfg)
+    # Instantiate model using the ModelSelector
+    print(f"Initializing model: {cfg.MODEL_NAME}")
+    model = ModelSelector.get_model(cfg.MODEL_NAME, cfg)
+
     criterion = nn.CrossEntropyLoss(weight=class_weights)
     optimizer = optim.Adam(model.parameters(), lr=cfg.LEARNING_RATE)
 
@@ -234,8 +237,8 @@ if __name__ == "__main__":
         save_model_to=save_to,
     )
 
-    best_model = ECGClassifier(cfg)
-    best_model.load_state_dict(best_model_dict)
+    # Load the best model's state into the existing model object
+    model.load_state_dict(best_model_dict)
 
     # Metrics
     plot_evaluation_metric(
@@ -258,5 +261,5 @@ if __name__ == "__main__":
         save=cfg.SAVE,
         save_to=save_to,
     )
-    evaluate_best_model(model=best_model, dataloader=val_loader, cfg=cfg)
-    print(f"Saved results & best model to '/{'/'.join(save_to.strip('/').split('/')[-3:])}' ...")
+    evaluate_best_model(model=model, dataloader=val_loader, cfg=cfg, save_to=save_to)
+    print(f"Saved results & best model to '/{'/'.join(save_to.strip('/').split('/')[-2:])}' ...")

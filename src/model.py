@@ -1,7 +1,32 @@
 import torch
 import torch.nn as nn
-from torch.nn.utils.rnn import pad_packed_sequence, pack_padded_sequence
+from torch.nn.utils.rnn import pad_packed_sequence, pack_padded_sequence, PackedSequence
 import math
+
+
+class ModelSelector:
+    """
+    A factory class to select and instantiate a model by name.
+    """
+
+    @staticmethod
+    def get_model(model_name, cfg):
+        """
+        Returns an instance of the model specified by model_name.
+
+        Args:
+            model_name (str): The name of the model to instantiate.
+            cfg (module): The configuration module.
+
+        Returns:
+            torch.nn.Module: An instance of the requested model.
+        """
+        if model_name == "ECGClassifier":
+            return ECGClassifier(cfg)
+        elif model_name == "SimplifiedECGClassifier":
+            return SimplifiedECGClassifier(cfg)
+        else:
+            raise ValueError(f"Model '{model_name}' not recognized.")
 
 
 class STFTLayer(nn.Module):
@@ -25,14 +50,14 @@ class STFTLayer(nn.Module):
         )
         x_mag = x_stft_complex.abs()
         new_lengths = (
-            torch.div(lengths_raw.float(), self.hop_length, rounding_mode="floor") + 1
+                torch.div(lengths_raw.float(), self.hop_length, rounding_mode="floor") + 1
         )
         return x_mag, new_lengths.long()
 
 
 class ConvBlock(nn.Module):
     def __init__(
-        self, in_channels, out_channels, conv_kernel_size, pool_kernel_size, pool_stride
+            self, in_channels, out_channels, conv_kernel_size, pool_kernel_size, pool_stride
     ):
         super().__init__()
         self.conv = nn.Conv2d(
@@ -48,10 +73,10 @@ class ConvBlock(nn.Module):
         x = self.relu(x)
         x = self.pool(x)
         new_lengths = (
-            torch.floor(
-                (lengths.float() - self.pool_kernel_time) / self.pool_stride_time
-            )
-            + 1
+                torch.floor(
+                    (lengths.float() - self.pool_kernel_time) / self.pool_stride_time
+                )
+                + 1
         )
         return x, new_lengths.long()
 
@@ -72,11 +97,11 @@ class ECGClassifier(nn.Module):
             cfg.CONV1_POOL_STRIDE,
         )
         current_freq_dim = (
-            math.floor(
-                (current_freq_dim - cfg.CONV1_POOL_KERNEL_SIZE[0])
-                / cfg.CONV1_POOL_STRIDE[0]
-            )
-            + 1
+                math.floor(
+                    (current_freq_dim - cfg.CONV1_POOL_KERNEL_SIZE[0])
+                    / cfg.CONV1_POOL_STRIDE[0]
+                )
+                + 1
         )
 
         self.conv2 = ConvBlock(
@@ -87,11 +112,11 @@ class ECGClassifier(nn.Module):
             cfg.CONV2_POOL_STRIDE,
         )
         current_freq_dim = (
-            math.floor(
-                (current_freq_dim - cfg.CONV2_POOL_KERNEL_SIZE[0])
-                / cfg.CONV2_POOL_STRIDE[0]
-            )
-            + 1
+                math.floor(
+                    (current_freq_dim - cfg.CONV2_POOL_KERNEL_SIZE[0])
+                    / cfg.CONV2_POOL_STRIDE[0]
+                )
+                + 1
         )
 
         rnn_input_features = cfg.CONV2_OUT_CHANNELS * current_freq_dim
@@ -122,3 +147,44 @@ class ECGClassifier(nn.Module):
         _, (ht, ct) = self.rnn(x)
         x = self.fc(ht[-1])
         return x
+
+
+class SimplifiedECGClassifier(nn.Module):
+    """
+    A simplified model that uses only an LSTM on the raw time-series data.
+    """
+
+    def __init__(self, cfg):
+        super().__init__()
+        self.rnn = nn.LSTM(
+            input_size=1,  # Raw signal, one feature per time step
+            hidden_size=cfg.RNN_HIDDEN_SIZE,
+            num_layers=cfg.RNN_NUM_LAYERS,
+            batch_first=True,
+            bidirectional=True,  # Let's make it bidirectional for more power
+        )
+        # Output features will be doubled due to bidirectional
+        self.fc = nn.Linear(cfg.RNN_HIDDEN_SIZE * 2, cfg.NUM_CLASSES)
+
+    def forward(self, x, lengths):
+        # x is a PackedSequence. Its data is shape (total_steps,).
+        # LSTM with input_size=1 needs (total_steps, 1).
+        # We can create a new PackedSequence with the correctly shaped data.
+        x_reshaped = PackedSequence(
+            data=x.data.unsqueeze(1),
+            batch_sizes=x.batch_sizes,
+            sorted_indices=x.sorted_indices,
+            unsorted_indices=x.unsorted_indices,
+        )
+
+        # RNN output is output, (h_n, c_n)
+        # h_n shape: (num_layers * num_directions, batch, hidden_size)
+        _, (h_n, _) = self.rnn(x_reshaped)
+
+        # Concatenate the final forward and backward hidden states
+        h_n_forward = h_n[-2, :, :]  # Last layer, forward
+        h_n_backward = h_n[-1, :, :]  # Last layer, backward
+        h_n_cat = torch.cat((h_n_forward, h_n_backward), dim=1)
+
+        out = self.fc(h_n_cat)
+        return out
