@@ -21,6 +21,7 @@ def plot_evaluation_metric(
     plt.xticks(range(1, len(train_metric) + 1))
     plt.legend()
     plt.grid(True)
+    plt.xticks(range(0, len(epochs) + 1, 5))
     plt.tight_layout()
     if save:
         plt.savefig(f"{save_to}/{metric}.png")
@@ -40,6 +41,7 @@ def plot_loss(train_loss, val_loss, save=True, save_to=""):
     plt.xticks(range(1, len(train_loss) + 1))
     plt.legend()
     plt.grid(True)
+    plt.xticks(range(0, len(epochs) + 1, 5))
     plt.tight_layout()
     if save:
         plt.savefig(f"{save_to}/loss.png")

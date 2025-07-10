@@ -127,6 +127,7 @@ class ECGClassifier(nn.Module):
             num_layers=cfg.RNN_NUM_LAYERS,
             batch_first=True,
         )
+        self.dropout = nn.Dropout(cfg.DROPOUT)
 
         self.fc = nn.Linear(cfg.RNN_HIDDEN_SIZE, cfg.NUM_CLASSES)
 
@@ -145,7 +146,9 @@ class ECGClassifier(nn.Module):
             x, current_lengths.cpu(), batch_first=True, enforce_sorted=False
         )
         _, (ht, ct) = self.rnn(x)
-        x = self.fc(ht[-1])
+        x = ht[-1]
+        x = self.dropout(x)
+        x = self.fc(x)
         return x
 
 

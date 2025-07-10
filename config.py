@@ -38,7 +38,7 @@ FREQ_NOISE_LEVEL = 0.05
 
 
 # Training Parameters
-MODEL_NAME = "SimplifiedECGClassifier"  # "ECGClassifier" or "SimplifiedECGClassifier"
+MODEL_NAME = "ECGClassifier"  # "ECGClassifier" or "SimplifiedECGClassifier"
 TEST_SIZE = 0.2
 RANDOM_SEED = 42
 NUM_CLASSES = 4
@@ -49,6 +49,7 @@ LEARNING_RATE = 1e-4
 BATCH_SIZE = 16
 NUM_EPOCHS = 1
 NUM_WORKERS = 0
+DROPOUT = 0.4
 
 N_FFT = 256
 HOP_LENGTH = N_FFT // 4
