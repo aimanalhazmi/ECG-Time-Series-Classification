@@ -31,6 +31,7 @@ def train_pipeline(augmented: bool = False, reduced: bool = False):
         print("Starting pipeline for BASELINE MODELING task...")
 
     save_to = create_dir(cfg.OUTPUTS, f"{task_prefix}_{cfg.MODEL_NAME}")
+    save_config_to_txt(cfg, save_to)
 
     ecg_signals, labels = load(cfg, train_data=True)
 

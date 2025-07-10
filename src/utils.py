@@ -3,7 +3,7 @@ from torch.nn.utils.rnn import pad_sequence, pack_padded_sequence
 import os
 from datetime import datetime
 from pathlib import Path
-
+import inspect
 
 def get_saved_model(output_dir, model_path=""):
     """
@@ -96,3 +96,9 @@ def create_dir(output_dir, sub_dir, use_timestamp=True):
     save_to = os.path.join(output, sub_dir_name)
     os.makedirs(save_to, exist_ok=True)
     return save_to
+
+def save_config_to_txt(cfg, save_to):
+    config_items = {k: v for k, v in cfg.__dict__.items() if not k.startswith("__") and not inspect.ismodule(v)}
+    with open(os.path.join(save_to, "run_config.txt"), "w") as f:
+        for k, v in sorted(config_items.items()):
+            f.write(f"{k}: {v}\n")
