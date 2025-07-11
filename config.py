@@ -18,6 +18,7 @@ TARGET_NAMES = ["Normal", "AF", "Other", "Noisy"]
 
 # OUTPUTS DIR
 OUTPUTS = "outputs/"
+EXPLORATION_FOLDER = os.path.join(OUTPUTS, "exploration")
 SAVE = True
 
 # PREDICTIONS ON TEST DATASET
