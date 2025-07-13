@@ -121,7 +121,7 @@ def train_evaluate(
         if val_loss < best_val_loss:
             best_val_loss = val_loss
             best_model_state = copy.deepcopy(model.state_dict())
-            torch.save(best_model_state, os.path.join(save_model_to, "final_model_augmentation_task.pt"))
+            torch.save(best_model_state, os.path.join(save_model_to, "final_model.pt"))
             print("Saving new best model..")
         print(f"{'-' * 25} End of Epoch {epoch + 1} {'-' * 25}")
 

@@ -90,7 +90,7 @@ python3 main.py --mode train --task modeling
 | `reduction`          | Dimensionality reduction + modeling with augmented data |
 
 -   The script will train the selected model, split the data, and evaluate on a validation set.
--   Results, including performance plots and the best model weights (`best_model.pt`), will be saved to a uniquely named directory that includes the model name and a timestamp, for example: `outputs/train_results_ECGClassifier_20250708_153000/`.
+-   Results, including performance plots and the best model weights (`best_model.pt`), will be saved to a uniquely named directory that includes the model name and a timestamp, for example: `outputs/train_results_baseline_ECGClassifier_20250710_112836/`.
 
 ### 3. Run Predictions
 
@@ -98,7 +98,7 @@ To generate predictions on the test set, run the testing script.
 
 e.g. 
 ```bash
-python3 main.py --mode predict --task modeling_augmented --model outputs/train_results_augmented_20250706_000413/final_model_augmentation_task.pt
+python3 main.py --mode predict --task modeling_augmented --model outputs/train_results_augmented_ECGClassifier_20250710_173927/final_model_augmentation_task.pt
 ```
 
 -   **Automatic Model Detection**: By default, the script automatically finds the most recently trained model in the `outputs/` directory. It intelligently infers the model architecture (e.g., `ECGClassifier`) from the directory name and loads the correct model.

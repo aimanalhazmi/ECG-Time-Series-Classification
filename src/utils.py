@@ -39,11 +39,11 @@ def get_saved_model(output_dir, device="cpu", model_path=""):
     else:
         print(f"No best model found at {model_path}, searching latest in {output_dir}")
         latest_dir = latest_train_dir(output_dir)
-        fallback_model_path = os.path.join(output_dir, latest_dir, "final_model_augmentation_task.pt")
+        fallback_model_path = os.path.join(output_dir, latest_dir, "final_model.pt")
 
         if not os.path.exists(fallback_model_path):
             raise FileNotFoundError(
-                f"'final_model_augmentation_task.pt' not found in latest directory: {fallback_model_path}"
+                f"'final_model.pt' not found in latest directory: {fallback_model_path}"
             )
         print(f"Loading best model from {fallback_model_path}")
         final_model_path = fallback_model_path
