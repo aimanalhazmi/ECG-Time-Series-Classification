@@ -1,7 +1,7 @@
 pip~=25.1.1
 wheel~=0.41.2
 filelock~=3.18.0
-torch~=2.5.1+cu121
+torch~=2.7.0
 numpy~=2.2.6
 pandas~=2.2.3
 matplotlib~=3.10.3
