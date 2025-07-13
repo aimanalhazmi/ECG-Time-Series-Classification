@@ -25,6 +25,7 @@ amls-ecg-time-series-classification/
 ├── outputs/                     # Model outputs, logs, predictions, plots
 ├── src/                         # Source code modules (e.g., model, train, test, utils, etc.)
 ├── data_exploration.ipynb       # Jupyter notebook for initial data analysis
+├── feature_engineering.ipynb    # Jupyter notebook For ECG feature extraction and training classical models 
 ├── config.py                    # Configuration variables and constants
 ├── requirements.txt             # Python dependencies
 └── README.md                    # Project documentation
@@ -101,13 +102,10 @@ e.g.
 python3 main.py --mode predict --task modeling_augmented --model outputs/train_results_augmented_ECGClassifier_20250710_173927/final_model_augmentation_task.pt
 ```
 
--   **Automatic Model Detection**: By default, the script automatically finds the most recently trained model in the `outputs/` directory. It intelligently infers the model architecture (e.g., `ECGClassifier`) from the directory name and loads the correct model.
--   **Specifying a Model**: To use a specific model file, update the `BEST_MODEL_PATH` variable in `config.py` with the direct path to your `best_model.pt` file.
-    ```python
-    # In config.py, to specify a model for prediction
-    BEST_MODEL_PATH = "outputs/train_results_SimplifiedECGClassifier_20250708_160000/final_model_augmentation_task.pt"
-    ```
--   Prediction results will be saved in a new directory named after the model being tested, such as `outputs/test_results_SimplifiedECGClassifier/`.
+- **Specifying a Model**: The --model argument is required in predict mode. You must provide the full path to a trained .pt model file.
+- **Automatic Model Detection**: If the specified --model path does not exist, the script automatically searches the outputs/ directory for the most recently trained model. It also infers the appropriate model architecture (e.g., ECGClassifier) from the directory name and loads the correct model.
+- **Error on Omission**: If the --model argument is omitted entirely, the script will raise an error and terminate.
+-   **Prediction Output**: Prediction results will be saved in a new directory named after the model being tested, such as `outputs/test_results_SimplifiedECGClassifier/`.
 
 ## Team
 
