@@ -5,7 +5,20 @@ from datetime import datetime
 from pathlib import Path
 import inspect
 
-def get_saved_model(output_dir, model_path=""):
+
+def _get_model_name_from_path(path):
+    dir_name = Path(path).parent.name
+    parts = dir_name.split("_")
+    # Expects dir name like: train_results_MODELNAME_TIMESTAMP
+    if len(parts) >= 4 and parts[0] == "train" and parts[1] == "results":
+        return parts[3]
+    print(
+        f"Could not infer model name from path '{dir_name}'. "
+        f"Using directory name as identifier."
+    )
+    return dir_name
+
+def get_saved_model(output_dir, device="cpu", model_path=""):
     """
     Finds and loads a saved model state dictionary, and infers the model name from the path.
 
@@ -18,18 +31,6 @@ def get_saved_model(output_dir, model_path=""):
             - model_state_dict (dict): The loaded model's state dictionary.
             - model_name (str): The inferred name of the model architecture.
     """
-
-    def _get_model_name_from_path(path):
-        dir_name = Path(path).parent.name
-        parts = dir_name.split("_")
-        # Expects dir name like: train_results_MODELNAME_TIMESTAMP
-        if len(parts) >= 3 and parts[0] == "train" and parts[1] == "results":
-            return parts[2]
-        print(
-            f"Could not infer model name from path '{dir_name}'. "
-            f"Using directory name as identifier."
-        )
-        return dir_name
 
     final_model_path = ""
     if os.path.exists(model_path):
@@ -47,7 +48,7 @@ def get_saved_model(output_dir, model_path=""):
         print(f"Loading best model from {fallback_model_path}")
         final_model_path = fallback_model_path
 
-    model_state_dict = torch.load(str(final_model_path))
+    model_state_dict = torch.load(str(final_model_path), map_location=torch.device(device))
     model_name = _get_model_name_from_path(final_model_path)
 
     return model_state_dict, model_name

@@ -46,13 +46,14 @@ def train_pipeline(augmented: bool = False, reduced: bool = False):
     print(f"Split completed: {len(X_train)} training samples and {len(X_val)} validation samples.")
 
     transform = None
-    if augmented or reduced:
+    if augmented:
         print("Applying data augmentation to the training set...")
         transform = ECGTransform(cfg)
 
     if reduced:
-        print("Applying data reduction...")
         # TODO: Implement reduction logic here on X_train and X_val if needed
+        raise NotImplementedError("This Task is not implemented yet.")
+
 
     train_dataset = ECGDataset(X_train, y_train, transform=transform)
     val_dataset = ECGDataset(X_val, y_val, transform=None)  # No augmentation on validation set
@@ -110,13 +111,13 @@ def test_pipeline(prediction_file, model_path):
         collate_fn=collate_fn, num_workers=cfg.NUM_WORKERS,
     )
 
-    state_dict, model_name = get_saved_model(output_dir, model_path=model_path)
+    state_dict, model_name = get_saved_model(output_dir, device=cfg.DEVICE, model_path=model_path)
     print(f"Inferred model architecture: {model_name}")
 
     model = ModelSelector.get_model(model_name, cfg)
     model.load_state_dict(state_dict)
 
-    save_to = create_dir(output_dir, f"test_results_{model_name}", use_timestamp=False)
+    save_to = create_dir(output_dir, f"test_results_{prediction_file.split(".")[0]}_{model_name}", use_timestamp=False)
     predict(
         model=model,
         dataloader=test_loader,

@@ -45,7 +45,7 @@ if __name__ == "__main__":
     )
 
     # Get saved model state and infer the model's architecture name from the path
-    saved_state_dict, model_name = get_saved_model(output_dir, model_path=cfg.BEST_MODEL_PATH)
+    saved_state_dict, model_name = get_saved_model(output_dir, device=cfg.DEVICE, model_path=cfg.BEST_MODEL_PATH)
 
     print(f"Inferred model architecture: {model_name}")
 
