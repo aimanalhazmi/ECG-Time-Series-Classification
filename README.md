@@ -38,6 +38,8 @@ amls-ecg-time-series-classification/
     ```
 2.  **Create and Activate a Virtual Environment**
 
+    (This only works for linux and macOS systems since there is no support for makefile on windows. 
+On windows please install the requirements manually.)
     -   **`make` or `make install`**: Creates a `.venv` and installs Python dependencies.
     -   **`make activate`**: Prints the activation command for your shell.
     -   **`make clean`**: Deletes the virtual environment.
