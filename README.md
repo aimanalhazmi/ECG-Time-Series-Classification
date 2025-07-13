@@ -41,7 +41,7 @@ amls-ecg-time-series-classification/
 
     (This only works for linux and macOS systems since there is no support for makefile on windows. 
 On windows please install the requirements manually.)
-    -   **`make` or `make install`**: Creates a `.venv` and installs Python dependencies.
+    -   **`make` or `make install`**: Creates a `.venv`, installs Python dependencies and registers a Jupyter kernel as AMLS.
     -   **`make activate`**: Prints the activation command for your shell.
     -   **`make clean`**: Deletes the virtual environment.
 
